@@ -1,0 +1,64 @@
+[package]
+name = "miga"
+version = "0.1.0"
+edition = "2021"
+authors = ["HormigaDev / BBEL Studios"]
+description = "Bedrock Addon Utility Package Manager"
+license = "GPL-3.0"
+
+[[bin]]
+name = "miga"
+path = "src/main.rs"
+
+[dependencies]
+# CLI
+clap      = { version = "4",    features = ["derive"] }
+dialoguer = "0.12.0"
+
+# Serialization
+serde     = { version = "1",    features = ["derive"] }
+serde_json = "1"
+
+# Network
+reqwest   = { version = "0.13", features = ["blocking", "json"] }
+
+# Output
+colored   = "3"
+indicatif = "0.18"
+
+# UUIDs
+uuid      = { version = "1", features = ["v4"] }
+
+# Error handling
+anyhow    = "1"
+
+# TypeScript compilation (oxc — native Rust, no Node.js required)
+oxc_allocator   = "=0.115.0"
+oxc_parser      = "=0.115.0"
+oxc_transformer = "=0.115.0"
+oxc_codegen     = "=0.115.0"
+oxc_minifier    = "=0.115.0"
+oxc_span        = "=0.115.0"
+oxc_semantic    = "=0.115.0"
+oxc_ast         = "=0.115.0"
+
+# File watching (miga run)
+notify    = { version = "8", features = ["macos_fsevent"] }
+
+# Build / packaging
+zip       = "8.1.0"
+walkdir   = "2"
+flate2    = "1"
+tar       = "0.4"
+
+# Environment & platform paths
+dotenvy   = "0.15"
+dirs      = "6"
+chrono    = "0.4"
+
+[profile.release]
+opt-level     = 3
+strip         = true    # strip debug symbols from the binary
+lto           = true    # full link-time optimization
+codegen-units = 1       # maximum optimization (slower compile, faster binary)
+panic         = "abort" # smaller binary — no stack unwinding needed
