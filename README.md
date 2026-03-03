@@ -5,7 +5,8 @@
 > A fast, zero-dependency CLI that bootstraps, builds, packages and manages
 > Minecraft Bedrock Edition add-ons — written in Rust.
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=for-the-badge)](LICENSE)
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=UCL7EE2G44KPQ)
 
 <div style="text-align: center">
 <img src="assets/miga_banner.png" alt="Miga Banner" height="150">
@@ -27,6 +28,7 @@
 - [Versioned module storage](#-versioned-module-storage)
 - [Project structure](#-project-structure)
 - [Environment variables](#-environment-variables)
+- [Support The Project](#support-the-project-️)
 - [Contributing](#-contributing)
 - [License](#-license)
 
@@ -312,6 +314,18 @@ SOURCE_MAPS=false
 On Linux the default paths are auto-detected via `$HOME`. On Windows they point
 to `%LOCALAPPDATA%\Packages\Microsoft.MinecraftUWP_*`. If the path is not found,
 miga will warn and skip the copy step.
+
+---
+
+## Support the Project ❤️
+
+If you enjoy this project and feel that it has helped you in any way, please consider supporting its development.
+
+Your donation helps maintain the project, improve existing features, and create more open-source tools for the community.
+
+Every contribution, no matter the size, makes a real difference.
+
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=UCL7EE2G44KPQ)
 
 ---
 
