@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] — 2026-03-03
+
+### Fixed
+
+- **Scoped module support** — the compiler's import rewriter now correctly handles
+  scoped module names (e.g. `@miga/framework`). Previously, the specifier was split
+  on the first `/`, causing `@miga/framework` to be misinterpreted as module `@miga`
+  with sub-path `framework`. A new `parse_module_specifier()` function distinguishes
+  plain modules (`bimap`, `bimap/utils`) from scoped modules
+  (`@miga/framework`, `@miga/framework/helpers`), ensuring imports are rewritten to
+  the correct versioned path (e.g. `./libs/@miga/framework/v1.0.0/framework.js`).
+
 ## [0.1.0] — 2026-02-28
 
 ### Added

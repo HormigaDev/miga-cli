@@ -193,12 +193,10 @@ fn rewrite_source<'a>(
         return;
     }
 
-    let (module_name, sub_path) = if value.contains('/') {
-        let mut parts = value.splitn(2, '/');
-        (parts.next().unwrap(), parts.next())
-    } else {
-        (value, None)
-    };
+    let (module_name, sub_path) = parse_module_specifier(value);
+
+    // For scoped modules without a version, use just the short name as fallback entry.
+    let short_name = module_name.rsplit('/').next().unwrap_or(module_name);
 
     let new_path = if let Some(version) = dep_versions.get(module_name) {
         match sub_path {
@@ -206,7 +204,7 @@ fn rewrite_source<'a>(
             None => {
                 format!(
                     "{}libs/{}/v{}/{}.js",
-                    prefix, module_name, version, module_name
+                    prefix, module_name, version, short_name
                 )
             }
         }
@@ -214,11 +212,39 @@ fn rewrite_source<'a>(
         // No version resolved — fall back to unversioned path.
         match sub_path {
             Some(sub) => format!("{}libs/{}/{}.js", prefix, module_name, sub),
-            None => format!("{}libs/{}/{}.js", prefix, module_name, module_name),
+            None => format!("{}libs/{}/{}.js", prefix, module_name, short_name),
         }
     };
 
     source.value = Atom::from(allocator.alloc_str(&new_path));
+}
+
+/// Splits a bare import specifier into `(module_name, optional_sub_path)`.
+///
+/// Handles both plain modules (`"bimap"`, `"bimap/utils"`) and scoped
+/// modules (`"@miga/framework"`, `"@miga/framework/helpers"`).
+fn parse_module_specifier(specifier: &str) -> (&str, Option<&str>) {
+    if let Some(rest) = specifier.strip_prefix('@') {
+        // Scoped: "@scope/name" or "@scope/name/sub/path"
+        if let Some(slash_pos) = rest.find('/') {
+            let after_scope = &rest[slash_pos + 1..];
+            if let Some(sub_pos) = after_scope.find('/') {
+                // "@scope/name/sub" → name = "@scope/name", sub = "sub"
+                let name_end = 1 + slash_pos + 1 + sub_pos; // +1 for '@'
+                (&specifier[..name_end], Some(&specifier[name_end + 1..]))
+            } else {
+                // "@scope/name" — no sub-path
+                (specifier, None)
+            }
+        } else {
+            // Malformed scoped (e.g. "@scope") — treat as plain
+            (specifier, None)
+        }
+    } else if let Some(pos) = specifier.find('/') {
+        (&specifier[..pos], Some(&specifier[pos + 1..]))
+    } else {
+        (specifier, None)
+    }
 }
 
 fn import_prefix(dest_path: &Path, script_root: &Path) -> String {
