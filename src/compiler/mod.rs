@@ -13,6 +13,7 @@ use oxc_transformer::{TransformOptions, Transformer};
 
 pub struct CompileOptions {
     pub minify: bool,
+    pub source_maps: bool,
     pub script_root: PathBuf,
     /// Maps bare module names to resolved versions for import path rewriting.
     /// For user scripts: populated from `ProjectManifest.modules`.
@@ -20,10 +21,17 @@ pub struct CompileOptions {
     pub dep_versions: HashMap<String, String>,
 }
 
+/// Result of compiling a single file: JS code + optional source map JSON.
+pub struct CompileResult {
+    pub code: String,
+    pub source_map: Option<String>,
+}
+
 impl Default for CompileOptions {
     fn default() -> Self {
         Self {
             minify: false,
+            source_maps: false,
             script_root: PathBuf::from("behavior/scripts"),
             dep_versions: HashMap::new(),
         }
@@ -34,7 +42,11 @@ impl Default for CompileOptions {
 ///
 /// `ts_path` — source file on disk (used for parsing and reading).
 /// `dest_path` — output location (used to calculate correct import prefix).
-pub fn compile_file(ts_path: &Path, dest_path: &Path, opts: &CompileOptions) -> Result<String> {
+pub fn compile_file(
+    ts_path: &Path,
+    dest_path: &Path,
+    opts: &CompileOptions,
+) -> Result<CompileResult> {
     let source = std::fs::read_to_string(ts_path)
         .with_context(|| format!("Cannot read {}", ts_path.display()))?;
     compile_source(&source, ts_path, dest_path, opts)
@@ -45,7 +57,7 @@ pub fn compile_source(
     path: &Path,
     dest_path: &Path,
     opts: &CompileOptions,
-) -> Result<String> {
+) -> Result<CompileResult> {
     let allocator = Allocator::default();
     let source_type = SourceType::from_path(path).unwrap_or_else(|_| SourceType::ts());
 
@@ -99,19 +111,47 @@ pub fn compile_source(
         Minifier::new(minifier_options).minify(&allocator, &mut program);
     }
 
-    Ok(Codegen::new()
-        .with_options(CodegenOptions {
-            minify: true,
-            comments: CommentOptions {
-                annotation: false,
-                jsdoc: false,
-                normal: false,
-                ..Default::default()
-            },
-            ..CodegenOptions::default()
-        })
-        .build(&program)
-        .code)
+    let source_map_path = if opts.source_maps {
+        Some(PathBuf::from(path.file_name().unwrap_or_default()))
+    } else {
+        None
+    };
+
+    let codegen_opts = CodegenOptions {
+        minify: opts.minify,
+        comments: CommentOptions {
+            annotation: false,
+            jsdoc: false,
+            normal: false,
+            ..Default::default()
+        },
+        source_map_path,
+        ..CodegenOptions::default()
+    };
+
+    let ret = Codegen::new().with_options(codegen_opts).build(&program);
+
+    let mut code = ret.code;
+    let source_map = if opts.source_maps {
+        if let Some(map) = ret.map {
+            let map_json = map.to_json_string();
+
+            // Append inline sourceMappingURL comment
+            let map_file = dest_path
+                .file_name()
+                .map(|f| format!("{}.map", f.to_string_lossy()))
+                .unwrap_or_else(|| "output.js.map".to_string());
+            code.push_str(&format!("\n//# sourceMappingURL={}\n", map_file));
+
+            Some(map_json)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    Ok(CompileResult { code, source_map })
 }
 
 fn rewrite_imports<'a>(

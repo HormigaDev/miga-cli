@@ -30,8 +30,12 @@ pub fn process_behavior(src: &Path, dest: &Path, opts: &CompileOptions) -> Resul
         match ext {
             "ts" => {
                 let dest_path = dest_file.with_extension("js");
-                let js = compiler::compile_file(path, &dest_path, opts)?;
-                fs::write_force(&dest_path, &js)?;
+                let result = compiler::compile_file(path, &dest_path, opts)?;
+                fs::write_force(&dest_path, &result.code)?;
+                if let Some(map) = &result.source_map {
+                    let map_path = format!("{}.map", dest_path.display());
+                    fs::write_force(map_path, map)?;
+                }
             }
             "js" if !path.with_extension("ts").exists() => {
                 fs::copy_force(path, &dest_file)?;
@@ -95,6 +99,7 @@ pub fn process_dependencies(
 
             let module_opts = CompileOptions {
                 minify: base_opts.minify,
+                source_maps: base_opts.source_maps,
                 script_root: base_opts.script_root.clone(),
                 dep_versions: locked.resolved_deps.clone(),
             };

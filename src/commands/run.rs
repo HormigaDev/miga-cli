@@ -9,19 +9,27 @@ use crate::utils::{builder, env, output, project};
 
 const DEBOUNCE_MS: u64 = 150;
 
+fn source_maps_enabled() -> bool {
+    let _ = dotenvy::dotenv();
+    std::env::var("SOURCE_MAPS")
+        .map(|v| v.eq_ignore_ascii_case("true") || v == "1")
+        .unwrap_or(false)
+}
+
 pub fn run(watch: bool) -> Result<()> {
     let manifest = builder::load_project()?;
     let lock = project::load_lock()?;
     let paths =
         env::resolve_deploy_paths(&manifest.name).context("Failed to resolve deploy paths")?;
     let dep_versions = builder::user_dep_versions(&manifest, &lock);
+    let source_maps = source_maps_enabled();
 
     output::section("miga run — development mode");
 
     crate::utils::fs::clean_dir(&paths.behavior)?;
     crate::utils::fs::clean_dir(&paths.resource)?;
 
-    deploy(&paths, &dep_versions)?;
+    deploy(&paths, &dep_versions, source_maps)?;
 
     if !watch {
         return Ok(());
@@ -44,7 +52,7 @@ pub fn run(watch: bool) -> Result<()> {
                     continue;
                 }
                 last_event = Instant::now();
-                if let Err(e) = deploy(&paths, &dep_versions) {
+                if let Err(e) = deploy(&paths, &dep_versions, source_maps) {
                     output::error(&format!("Deploy error: {}", e));
                 }
             }
@@ -56,11 +64,13 @@ pub fn run(watch: bool) -> Result<()> {
 fn deploy(
     paths: &env::DeployPaths,
     dep_versions: &std::collections::HashMap<String, String>,
+    source_maps: bool,
 ) -> Result<()> {
     let lock = project::load_lock()?;
 
     let opts = CompileOptions {
         minify: false,
+        source_maps,
         script_root: PathBuf::from("behavior/scripts"),
         dep_versions: dep_versions.clone(),
     };

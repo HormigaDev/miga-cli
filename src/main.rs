@@ -12,7 +12,12 @@ fn main() {
 
     let result = match cli.command {
         Commands::Add { packages } => commands::add::run(packages),
-        Commands::Init { namespace, name } => commands::init::run(namespace, name),
+        Commands::Init {
+            namespace,
+            name,
+            project_type,
+            yes,
+        } => commands::init::run(namespace, name, project_type, yes),
         Commands::Fetch {
             module,
             version,

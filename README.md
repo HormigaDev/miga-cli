@@ -1,4 +1,4 @@
-# MIGA - CLI
+# 🐜 MIGA - CLI
 
 > **Bedrock Addon Utility Package Manager**
 >
@@ -13,43 +13,46 @@
 
 ---
 
-## Table of Contents
+## 📑 Table of Contents
 
-- [Overview](#overview)
-- [Installation](#installation)
-- [Commands](#commands)
-    - [init](#init)
-    - [add](#add)
-    - [fetch](#fetch)
-    - [run](#run)
-    - [build](#build)
-    - [remove](#remove)
-- [Project structure](#project-structure)
-- [Environment variables](#environment-variables)
-- [Contributing](#contributing)
-- [License](#license)
+- [Overview](#-overview)
+- [Installation](#-installation)
+- [Commands](#-commands)
+    - [init](#-init)
+    - [add](#-add)
+    - [fetch](#-fetch)
+    - [run](#-run)
+    - [build](#-build)
+    - [remove](#-remove)
+- [Versioned module storage](#-versioned-module-storage)
+- [Project structure](#-project-structure)
+- [Environment variables](#-environment-variables)
+- [Contributing](#-contributing)
+- [License](#-license)
 
 ---
 
-## Overview
+## 🔭 Overview
 
 `miga` replaces a full Node.js toolchain for Bedrock add-on development.
 It handles:
 
-- **Scaffolding** — creates a complete BP + RP project with typed TypeScript support.
-- **TypeScript types** — downloads `.d.ts` files directly from the npm registry without
+- 🏗️ **Scaffolding** — creates a complete BP + RP project with typed TypeScript support.
+- 📘 **TypeScript types** — downloads `.d.ts` files directly from the npm registry without
   requiring `npm` or `node` to be installed.
-- **Registry modules** — fetches community modules from the miga registry and wires
+- 📦 **Registry modules** — fetches community modules from the miga registry and wires
   them into your project.
-- **Compilation** — transpiles and optionally minifies/obfuscates TypeScript using
+- ⚡ **Compilation** — transpiles and optionally minifies TypeScript using
   [oxc](https://oxc.rs/) (native Rust, ~100× faster than `tsc`).
-- **Packaging** — assembles `.mcpack` and `.mcaddon` archives ready for distribution.
-- **Hot reload** — watches your source files and redeploys to Minecraft's dev pack
+- 📂 **Packaging** — assembles `.mcpack` and `.mcaddon` archives ready for distribution.
+- 🔄 **Hot reload** — watches your source files and redeploys to Minecraft's dev pack
   folders on every save.
+- 🔀 **Version conflict resolution** — when two modules depend on different versions
+  of the same transitive dependency, miga prompts you to upgrade or keep both.
 
 ---
 
-## Installation
+## 📥 Installation
 
 ### From source
 
@@ -67,29 +70,52 @@ somewhere on your `PATH`.
 
 ---
 
-## Commands
+## 🛠️ Commands
 
-### `init`
+### 🆕 `init`
 
 Scaffold a new Bedrock add-on project interactively.
 
 ```bash
-miga init [--namespace <ns>] [--name <name>]
+miga init [--namespace <ns>] [--name <name>] [--type <type>] [--yes]
 ```
 
 **Options**
 
-| Flag          | Description                                                    |
-| ------------- | -------------------------------------------------------------- |
-| `--namespace` | Namespace prefix used inside the add-on (e.g. `woc`).          |
-| `--name`      | Internal identifier for the add-on (e.g. `ecological-spawns`). |
+| Flag               | Short | Description                                                    |
+| ------------------ | ----- | -------------------------------------------------------------- |
+| `--namespace <ns>` | `-N`  | Namespace prefix used inside the add-on (e.g. `woc`).          |
+| `--name <name>`    | `-n`  | Internal identifier for the add-on (e.g. `ecological-spawns`). |
+| `--type <type>`    | `-t`  | Project type to scaffold (see below).                          |
+| `--yes`            | `-y`  | Accept all defaults without interactive prompts.               |
 
-Any missing options are asked interactively. The command creates a directory named
-after the add-on containing a full BP/RP skeleton with TypeScript support.
+**Project types**
+
+| Type                  | Value                 | Description                                          |
+| --------------------- | --------------------- | ---------------------------------------------------- |
+| Full _(default)_      | `full`                | Behavior Pack with scripts + Resource Pack.          |
+| Behavior              | `behavior`            | Behavior Pack with scripts only (no Resource Pack).  |
+| Behavior (scriptless) | `behavior-scriptless` | Data-driven Behavior Pack only (no scripts).         |
+| Addon (scriptless)    | `addon-scriptless`    | Behavior Pack + Resource Pack, both without scripts. |
+| Resource              | `resource`            | Resource Pack only.                                  |
+
+Any missing options are asked interactively. Use `-y` to skip all prompts
+and use defaults (`namespace=myaddon`, `name=my-addon`, `type=full`).
+The command creates a directory named after the add-on containing the
+appropriate pack skeleton based on the selected project type.
+
+**Examples**
+
+```bash
+miga init                                    # fully interactive
+miga init --yes                              # accept all defaults
+miga init -t resource -N textures -n my-rp   # resource pack only
+miga init -y -t behavior                     # behavior + scripts, no prompts
+```
 
 ---
 
-### `add`
+### 📘 `add`
 
 Add a `@minecraft/*` type package from the npm registry.
 
@@ -109,90 +135,143 @@ Types are downloaded to `.miga_modules/` and the package is recorded in
 
 ---
 
-### `fetch`
+### 📦 `fetch`
 
 Install one or more modules from the **miga registry**.
 
 ```bash
-miga fetch <module> [<module> ...]
+miga fetch [<module>] [--version <ver>] [--update]
+```
+
+**Options**
+
+| Flag        | Description                                                        |
+| ----------- | ------------------------------------------------------------------ |
+| `--version` | Install a specific version (e.g. `--version 1.2.0`).               |
+| `--update`  | Update the module (or all modules if no name given) to the latest. |
+
+**Examples**
+
+```bash
+miga fetch                        # install all modules listed in miga.json
+miga fetch bimap                  # install a specific module
+miga fetch bimap --version 1.2.0  # install a specific version
+miga fetch bimap --update         # update a module to latest
+miga fetch --update               # update all installed modules
 ```
 
 Modules are downloaded, extracted and registered in `.miga/modules.lock`.
-Transitive dependencies are resolved automatically.
+Transitive dependencies are resolved automatically. If a version conflict is
+detected (two dependants need different versions of the same module), miga will
+prompt you to **upgrade**, **keep both**, or **keep the existing version**.
 
 ---
 
-### `run`
+### 🔄 `run`
 
 Watch for source changes and hot-reload the add-on into Minecraft.
 
 ```bash
-miga run [--obfuscate]
+miga run [--no-watch]
 ```
 
-| Flag          | Description                                          |
-| ------------- | ---------------------------------------------------- |
-| `--obfuscate` | Minify and obfuscate the compiled JavaScript output. |
+| Flag         | Description                                          |
+| ------------ | ---------------------------------------------------- |
+| `--no-watch` | Compile and deploy once, then exit (no file watcher) |
 
 `miga run` compiles TypeScript on every change and copies the packs to the
 paths configured in `.env` (`BEHAVIOR_PACKS_PATH` / `RESOURCE_PACKS_PATH`).
 
 ---
 
-### `build`
+### 📦 `build`
 
-Compile and package the add-on.
+Compile, minify and package the add-on for release.
 
 ```bash
-miga build [--obfuscate]
+miga build
 ```
 
 Outputs:
 
-| File                    | Description                    |
-| ----------------------- | ------------------------------ |
-| `dist/<name>-bp.mcpack` | Behavior Pack only.            |
-| `dist/<name>-rp.mcpack` | Resource Pack only.            |
-| `dist/<name>.mcaddon`   | Combined archive (both packs). |
+| File                                      | Description                    |
+| ----------------------------------------- | ------------------------------ |
+| `dist/<name>_behavior_pack-v<ver>.mcpack` | Behavior Pack only.            |
+| `dist/<name>_resource_pack-v<ver>.mcpack` | Resource Pack only.            |
+| `dist/<name>-v<ver>.mcaddon`              | Combined archive (both packs). |
 
 ---
 
-### `remove`
+### 🗑️ `remove`
 
-Remove an installed registry module.
+Remove installed modules or external type packages.
 
 ```bash
-miga remove <module>
+miga remove <package> [<package> ...]
+miga remove --all
 ```
 
-Deletes the module files and removes it from `.miga/modules.lock`.
+| Flag    | Description                                             |
+| ------- | ------------------------------------------------------- |
+| `--all` | Remove all installed modules and externals (asks first) |
+
+Deletes the module/package files and cleans `.miga/modules.lock`,
+`.miga/miga.json`, `tsconfig.json` and `behavior/manifest.json` automatically.
 
 ---
 
-## Project structure
+## 🔀 Versioned module storage
 
-After running `miga init`, the project looks like:
+Modules are stored under **`.miga_modules/<name>/v<version>/`**, enabling
+multiple versions of the same module to coexist when different dependants
+require incompatible versions.
+
+```
+.miga_modules/
+├── bimap/
+│   └── v1.0.0/
+│       ├── index.ts
+│       └── ...
+└── utils/
+    ├── v1.0.0/
+    │   └── ...
+    └── v2.0.0/
+        └── ...
+```
+
+During compilation, bare imports are rewritten to their versioned paths
+(e.g. `import { ... } from "bimap"` → `./libs/bimap/v1.0.0/index.js`),
+so each module always resolves to the exact version it was installed with.
+
+---
+
+## 🗂️ Project structure
+
+After running `miga init`, the project looks like the example below.
+The actual directories depend on the chosen project type — for instance,
+a `resource` project has no `behavior/` folder, and a `behavior-scriptless`
+project has no `scripts/` subdirectory.
 
 ```
 <addon-name>/
-├── behavior/               Behavior Pack
+├── behavior/               📁 Behavior Pack
 │   ├── manifest.json
-│   ├── pack_icon.png       Replace with your own icon
+│   ├── pack_icon.png       🎨 Replace with your own icon
 │   ├── LICENSE
 │   └── scripts/
-│       ├── index.ts        Entry point
+│       ├── index.ts        🚀 Entry point
 │       ├── config/
-│       │   └── registry.ts Central registry / namespace
+│       │   └── registry.ts 📋 Central registry / namespace
 │       ├── events/
 │       │   └── index.ts
 │       ├── components/
 │       ├── features/
 │       └── core/
-├── resource/               Resource Pack
+├── resource/               📁 Resource Pack
 │   ├── manifest.json
 │   ├── pack_icon.png
 │   ├── LICENSE
-│   ├── texts/              en_US.lang, es_ES.lang, pt_BR.lang
+│   ├── texts/              🌍 en_US.lang, es_ES.lang, pt_BR.lang
 │   ├── textures/
 │   │   ├── blocks/
 │   │   ├── items/
@@ -202,10 +281,11 @@ After running `miga init`, the project looks like:
 │   ├── sounds/
 │   └── ui/
 ├── .miga/
-│   ├── miga.json           Project manifest (name, version, modules)
-│   └── modules.lock        Installed module lock file
-├── .env                    Deploy paths (not committed)
-├── .env.template           Template to share with collaborators
+│   ├── miga.json           📋 Project manifest (name, version, modules)
+│   └── modules.lock        🔒 Installed module lock file
+├── .miga_modules/          📦 Downloaded modules (versioned)
+├── .env                    🔧 Deploy paths (not committed)
+├── .env.template           📄 Template to share with collaborators
 ├── .gitignore
 ├── tsconfig.json
 ├── LICENSE
@@ -214,7 +294,7 @@ After running `miga init`, the project looks like:
 
 ---
 
-## Environment variables
+## 🔧 Environment variables
 
 Configure `.env` (copy from `.env.template`):
 
@@ -235,13 +315,13 @@ miga will warn and skip the copy step.
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-## License
+## 📄 License
 
 `miga` is free software released under the
 [GNU General Public License v3.0](LICENSE).

@@ -1,0 +1,7 @@
+- Usa el idioma inglés para documentación, escribir el código y los comentarios, pero usa el idioma español para hablar con el usaurio.
+- Modulariza cuando tenga sentido, pero no lo hagas solo por hacerlo. No es necesario crear un nuevo módulo para cada función.
+- Escribe código limpio y legible, siguiendo las mejores prácticas de Rust.
+- Para funciones públicas, escribe documentación clara y concisa usando doc comments (///).
+- Para funciones privadas, escribe comentarios explicativos solo si la lógica no es obvia.
+- Evita la repetición de código. Si encuentras que estás escribiendo el mismo código más de una vez, considera refactorizarlo en una función o módulo reutilizable.
+- Si el código es complejo, considera agregar pruebas unitarias para asegurar su correcto funcionamiento y facilitar el mantenimiento a largo plazo.
