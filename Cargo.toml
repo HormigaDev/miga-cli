@@ -5,6 +5,12 @@ edition = "2021"
 authors = ["HormigaDev / BBEL Studios"]
 description = "Bedrock Addon Utility Package Manager"
 license = "GPL-3.0"
+repository = "https://github.com/HormigaDev/miga-cli"
+homepage = "https://github.com/HormigaDev/miga-cli"
+documentation = "https://docs.rs/miga"
+readme = "README.md"
+keywords = ["minecraft", "bedrock", "addon", "cli"]
+categories = ["command-line-utilities"]
 
 [[bin]]
 name = "miga"
