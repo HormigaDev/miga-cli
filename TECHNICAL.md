@@ -445,7 +445,7 @@ pub struct ResolvedModule {
 pub struct CompileOptions {
     pub minify: bool,
     pub source_maps: bool,
-    pub script_root: PathBuf,
+    pub script_root: PathBuf, // Defaults to "scripts"
     /// Maps bare module names to dependency info for import path rewriting.
     pub dep_versions: HashMap<String, DependencyInfo>,
 }

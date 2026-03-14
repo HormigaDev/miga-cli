@@ -38,7 +38,7 @@ impl Default for CompileOptions {
         Self {
             minify: false,
             source_maps: false,
-            script_root: PathBuf::from("behavior/scripts"),
+            script_root: PathBuf::from("scripts"),
             dep_versions: HashMap::new(),
         }
     }
@@ -267,17 +267,26 @@ fn parse_module_specifier(specifier: &str) -> (&str, Option<&str>) {
 }
 
 fn import_prefix(dest_path: &Path, script_root: &Path) -> String {
-    let current_dir = dest_path.parent().unwrap_or_else(|| Path::new(""));
+    let mut current = dest_path.parent();
+    let mut depth = 0;
 
-    match current_dir.strip_prefix(script_root) {
-        Ok(relative) => {
-            let depth = relative.components().count();
-            if depth == 0 {
+    // Determine the folder name we are looking for (e.g. "scripts")
+    let target_folder = script_root
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("scripts");
+
+    while let Some(path) = current {
+        if path.file_name().and_then(|n| n.to_str()) == Some(target_folder) {
+            return if depth == 0 {
                 "./".to_string()
             } else {
                 "../".repeat(depth)
-            }
+            };
         }
-        Err(_) => "./".to_string(),
+        current = path.parent();
+        depth += 1;
     }
+
+    "./".to_string()
 }

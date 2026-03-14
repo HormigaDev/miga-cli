@@ -71,7 +71,7 @@ fn deploy(
     let opts = CompileOptions {
         minify: false,
         source_maps,
-        script_root: PathBuf::from("behavior/scripts"),
+        script_root: PathBuf::from("scripts"),
         dep_versions: dep_versions.clone(),
     };
 

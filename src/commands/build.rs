@@ -30,7 +30,7 @@ pub fn run() -> Result<()> {
     let opts = CompileOptions {
         minify: true,
         source_maps: false,
-        script_root: PathBuf::from("behavior/scripts"),
+        script_root: PathBuf::from("scripts"),
         dep_versions,
     };
 
