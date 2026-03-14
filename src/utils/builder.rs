@@ -1,4 +1,4 @@
-use crate::compiler::{self, CompileOptions};
+use crate::compiler::{self, CompileOptions, DependencyInfo};
 use crate::registry::manifest::{LockFile, ProjectManifest};
 use crate::utils::{fs, json as utils_json, project};
 use anyhow::Result;
@@ -97,11 +97,26 @@ pub fn process_dependencies(
                 continue;
             }
 
+            let mut dep_versions_map = HashMap::new();
+            for (dep_name, dep_version) in &locked.resolved_deps {
+                if let Some(dep_module_versions) = lock.modules.get(dep_name) {
+                    if let Some(dep_locked) = dep_module_versions.get(dep_version) {
+                        dep_versions_map.insert(
+                            dep_name.clone(),
+                            DependencyInfo {
+                                version: dep_version.clone(),
+                                entry: dep_locked.entry.clone(),
+                            },
+                        );
+                    }
+                }
+            }
+
             let module_opts = CompileOptions {
                 minify: base_opts.minify,
                 source_maps: base_opts.source_maps,
                 script_root: base_opts.script_root.clone(),
-                dep_versions: locked.resolved_deps.clone(),
+                dep_versions: dep_versions_map,
             };
 
             process_behavior(&src, &dest, &module_opts)?;
@@ -112,19 +127,41 @@ pub fn process_dependencies(
 
 /// Builds `dep_versions` for user scripts from the project manifest
 /// and lock file. Each directly-installed module maps to its pinned version.
-pub fn user_dep_versions(manifest: &ProjectManifest, lock: &LockFile) -> HashMap<String, String> {
+pub fn user_dep_versions(
+    manifest: &ProjectManifest,
+    lock: &LockFile,
+) -> HashMap<String, DependencyInfo> {
     let mut versions = HashMap::new();
 
     for (name, version) in &manifest.modules {
-        versions.insert(name.clone(), version.clone());
+        if let Some(module_versions) = lock.modules.get(name) {
+            if let Some(locked) = module_versions.get(version) {
+                versions.insert(
+                    name.clone(),
+                    DependencyInfo {
+                        version: version.clone(),
+                        entry: locked.entry.clone(),
+                    },
+                );
+            }
+        }
     }
 
     // Also include any transitive deps that only appear in the lock,
     // picking the first available version for unversioned fallback.
     for (name, installed) in &lock.modules {
-        versions
-            .entry(name.clone())
-            .or_insert_with(|| installed.keys().next().cloned().unwrap_or_default());
+        // If not explicitly in manifest, we pick the first one from lock
+        if !versions.contains_key(name) {
+            if let Some((ver, locked)) = installed.iter().next() {
+                versions.insert(
+                    name.clone(),
+                    DependencyInfo {
+                        version: ver.clone(),
+                        entry: locked.entry.clone(),
+                    },
+                );
+            }
+        }
     }
 
     versions

@@ -446,8 +446,14 @@ pub struct CompileOptions {
     pub minify: bool,
     pub source_maps: bool,
     pub script_root: PathBuf,
-    /// Maps bare module names to resolved versions for import path rewriting.
-    pub dep_versions: HashMap<String, String>,
+    /// Maps bare module names to dependency info for import path rewriting.
+    pub dep_versions: HashMap<String, DependencyInfo>,
+}
+
+#[derive(Clone, Debug)]
+pub struct DependencyInfo {
+    pub version: String,
+    pub entry: String,
 }
 ```
 

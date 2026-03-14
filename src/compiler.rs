@@ -18,7 +18,13 @@ pub struct CompileOptions {
     /// Maps bare module names to resolved versions for import path rewriting.
     /// For user scripts: populated from `ProjectManifest.modules`.
     /// For module code: populated from `LockedModule.resolved_deps`.
-    pub dep_versions: HashMap<String, String>,
+    pub dep_versions: HashMap<String, DependencyInfo>,
+}
+
+#[derive(Clone, Debug)]
+pub struct DependencyInfo {
+    pub version: String,
+    pub entry: String,
 }
 
 /// Result of compiling a single file: JS code + optional source map JSON.
@@ -159,7 +165,7 @@ fn rewrite_imports<'a>(
     program: &mut oxc_ast::ast::Program<'a>,
     dest_path: &Path,
     script_root: &Path,
-    dep_versions: &HashMap<String, String>,
+    dep_versions: &HashMap<String, DependencyInfo>,
 ) {
     let prefix = import_prefix(dest_path, script_root);
 
@@ -185,7 +191,7 @@ fn rewrite_source<'a>(
     allocator: &'a Allocator,
     source: &mut StringLiteral<'a>,
     prefix: &str,
-    dep_versions: &HashMap<String, String>,
+    dep_versions: &HashMap<String, DependencyInfo>,
 ) {
     let value = source.value.as_str();
 
@@ -198,13 +204,26 @@ fn rewrite_source<'a>(
     // For scoped modules without a version, use just the short name as fallback entry.
     let short_name = module_name.rsplit('/').next().unwrap_or(module_name);
 
-    let new_path = if let Some(version) = dep_versions.get(module_name) {
+    let new_path = if let Some(info) = dep_versions.get(module_name) {
         match sub_path {
-            Some(sub) => format!("{}libs/{}/v{}/{}.js", prefix, module_name, version, sub),
+            Some(sub) => format!(
+                "{}libs/{}/v{}/{}.js",
+                prefix, module_name, info.version, sub
+            ),
             None => {
+                // Remove .ts or .js extension if present
+                let entry = &info.entry;
+                let entry_no_ext = if let Some(stripped) = entry.strip_suffix(".ts") {
+                    stripped
+                } else if let Some(stripped) = entry.strip_suffix(".js") {
+                    stripped
+                } else {
+                    entry
+                };
+
                 format!(
                     "{}libs/{}/v{}/{}.js",
-                    prefix, module_name, version, short_name
+                    prefix, module_name, info.version, entry_no_ext
                 )
             }
         }

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] — 2026-03-14
+
+### Fixed
+
+- **Module entry point resolution** — the compiler now correctly respects the
+  `entry` field from module manifests (e.g. `index.ts`) instead of inferring
+  the filename from the module name. This fixes imports for modules like
+  `@miga/framework` where the entry point is `index.ts` but the import path
+  was incorrectly rewritten to `framework.js`.
+
 ## [0.1.1] — 2026-03-03
 
 ### Fixed

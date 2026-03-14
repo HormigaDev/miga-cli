@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
-use crate::compiler::CompileOptions;
+use crate::compiler::{CompileOptions, DependencyInfo};
 use crate::utils::{builder, env, output, project};
 
 const DEBOUNCE_MS: u64 = 150;
@@ -63,7 +63,7 @@ pub fn run(watch: bool) -> Result<()> {
 
 fn deploy(
     paths: &env::DeployPaths,
-    dep_versions: &std::collections::HashMap<String, String>,
+    dep_versions: &std::collections::HashMap<String, DependencyInfo>,
     source_maps: bool,
 ) -> Result<()> {
     let lock = project::load_lock()?;

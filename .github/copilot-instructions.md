@@ -5,3 +5,4 @@
 - Para funciones privadas, escribe comentarios explicativos solo si la lógica no es obvia.
 - Evita la repetición de código. Si encuentras que estás escribiendo el mismo código más de una vez, considera refactorizarlo en una función o módulo reutilizable.
 - Si el código es complejo, considera agregar pruebas unitarias para asegurar su correcto funcionamiento y facilitar el mantenimiento a largo plazo.
+- Elimina los comentarios de ruido (si existen) que no sean explicativos tipo framework profesional.
